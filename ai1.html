@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Policy Dashboard — 15 Universities Report</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #11182d;
+    --panel-2: #16213d;
+    --text: #eef2ff;
+    --muted: #a7b0cc;
+    --line: rgba(255,255,255,.09);
+    --accent: #7dd3fc;
+    --accent-2: #c4b5fd;
+    --good: #86efac;
+    --warn: #fbbf24;
+    --bad: #fca5a5;
+    --shadow: 0 16px 40px rgba(0,0,0,.28);
+    --radius: 22px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(1200px 700px at 10% 0%, rgba(125,211,252,.14), transparent 55%),
+      radial-gradient(900px 600px at 90% 0%, rgba(196,181,253,.14), transparent 48%),
+      var(--bg);
+    color: var(--text);
+  }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 24px; }
+  .hero {
+    display: grid;
+    grid-template-columns: 1.35fr .65fr;
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 18px;
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.025));
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    border-radius: var(--radius);
+    backdrop-filter: blur(12px);
+  }
+  .hero-main { padding: 24px; }
+  .eyebrow {
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 7px 12px; border-radius: 999px;
+    background: rgba(125,211,252,.12);
+    color: #d8f3ff; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  h1 { margin: 14px 0 10px; font-size: clamp(30px, 4vw, 50px); line-height: 1.04; }
+  .subtitle { color: var(--muted); max-width: 70ch; font-size: 15px; line-height: 1.6; }
+  .meta {
+    margin-top: 18px; display:flex; flex-wrap: wrap; gap: 10px;
+  }
+  .pill {
+    padding: 9px 12px; border-radius: 999px; border:1px solid var(--line);
+    background: rgba(255,255,255,.03); color: var(--text); font-size: 13px;
+  }
+  .hero-side {
+    padding: 18px;
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .mini {
+    padding: 16px; border-radius: 18px; background: rgba(255,255,255,.03);
+    border: 1px solid var(--line);
+  }
+  .mini h3 { margin: 0 0 6px; font-size: 14px; color: #dbeafe; }
+  .mini .big { font-size: 28px; font-weight: 800; margin: 6px 0 0; }
+  .mini .small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+  .grid {
+    display:grid;
+    grid-template-columns: 320px minmax(0,1fr) 390px;
+    gap: 18px;
+    align-items:start;
+    margin-bottom: 24px;
+  }
+  .panel { padding: 18px; }
+  .panel h2 { margin: 0 0 12px; font-size: 18px; }
+  .control {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.04);
+    color: var(--text);
+    outline: none;
+  }
+  .control::placeholder { color: #8f98b9; }
+  select.control option { color: #0b1020; }
+  .filters { display:grid; gap: 10px; }
+  .chip-row { display:flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    cursor:pointer;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.03);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    user-select: none;
+  }
+  .chip.active { background: rgba(125,211,252,.16); border-color: rgba(125,211,252,.4); }
+  .chart {
+    margin-top: 14px;
+    display:grid;
+    gap: 10px;
+  }
+  .barrow {
+    display:grid;
+    grid-template-columns: 138px 1fr 42px;
+    gap: 8px;
+    align-items:center;
+    font-size: 12px;
+  }
+  .bartrack {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.06);
+    overflow: hidden;
+  }
+  .barfill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(125,211,252,.95), rgba(196,181,253,.95));
+  }
+  .cards {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .uni {
+    padding: 16px;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .uni:hover { transform: translateY(-2px); border-color: rgba(125,211,252,.35); }
+  .uni.active { outline: 2px solid rgba(125,211,252,.65); }
+  .name { font-size: 16px; font-weight: 800; margin: 0 0 5px; }
+  .summary { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 12px; }
+  .tagrow { display:flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag {
+    padding: 6px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.035);
+  }
+  .tag.good { background: rgba(134,239,172,.10); }
+  .tag.warn { background: rgba(251,191,36,.10); }
+  .tag.bad { background: rgba(252,165,165,.10); }
+  .detail {
+    position: sticky; top: 18px;
+  }
+  .detail h2 { margin-top: 0; }
+  .detail .headline {
+    font-size: 22px; font-weight: 900; margin: 0 0 8px;
+  }
+  .detail .kpi-row {
+    display:grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin: 14px 0;
+  }
+  .kpi {
+    padding: 12px; border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid var(--line);
+  }
+  .kpi .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing:.08em; }
+  .kpi .value { margin-top: 5px; font-size: 13px; font-weight: 700; line-height: 1.4; }
+  .bullets {
+    margin: 12px 0 0; padding-left: 18px; color: #e8edff;
+  }
+  .bullets li { margin-bottom: 8px; color: #e8edff; line-height: 1.45; }
+  
+  /* Report Document Section Styles */
+  .report-section {
+    padding: 32px;
+    margin-top: 24px;
+  }
+  .report-header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .report-header h2 {
+    margin: 0;
+    font-size: 28px;
+    color: var(--accent);
+  }
+  .report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+  .report-block {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .report-block h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 16px;
+    color: var(--accent-2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 6px;
+  }
+  .report-block p {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0 0 10px 0;
+  }
+  .report-block p:last-child {
+    margin-bottom: 0;
+  }
+  .footer-note {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 24px;
+    line-height: 1.5;
+  }
+  .section-title {
+    display:flex; align-items:end; justify-content:space-between;
+    gap: 12px; margin: 22px 0 12px;
+  }
+  .section-title h2 { margin: 0; }
+  .section-title .count { color: var(--muted); font-size: 13px; }
+  .searchhint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  @media (max-width: 1200px) {
+    .grid { grid-template-columns: 1fr; }
+    .detail { position: static; }
+    .hero { grid-template-columns: 1fr; }
+    .report-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="card hero-main">
+      <div class="eyebrow">Interactive report dashboard</div>
+      <h1>AI policy dashboard for the “15 Universities” report</h1>
+      <div class="subtitle">
+        Explore how the report compares AI rules across coursework, theses, dissertations, and research. Use the filters to narrow the universities, click a card to inspect the details, and review the deep-dive institutional documentation at the bottom.
+      </div>
+      <div class="meta">
+        <div class="pill">Extracted institutions: 15</div>
+        <div class="pill">Regions covered: US, Canada, UK, Europe</div>
+        <div class="pill">Focus: coursework + graduate research</div>
+        <div class="pill">Includes: disclosure, privacy, thesis guidance</div>
+      </div>
+    </div>
+    <div class="card hero-side">
+      <div class="mini">
+        <h3>Coursework governance</h3>
+        <div class="big" id="courseCount">—</div>
+        <div class="small">How many institutions rely on instructor-, department-, or course-level AI rules.</div>
+      </div>
+      <div class="mini">
+        <h3>Graduate research guidance</h3>
+        <div class="big" id="researchCount">—</div>
+        <div class="small">How many institutions give explicit guidance for theses, dissertations, or other graduate milestones.</div>
+      </div>
+      <div class="mini">
+        <h3>Disclosure expectation</h3>
+        <div class="big" id="disclosureCount">—</div>
+        <div class="small">How many institutions expect or require AI use to be disclosed, acknowledged, or documented.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card panel">
+      <h2>Filters</h2>
+      <input id="search" class="control" placeholder="Search institution or policy text…" />
+      <select id="region" class="control">
+        <option value="All">All regions</option>
+      </select>
+      <select id="course" class="control">
+        <option value="All">All course models</option>
+      </select>
+      <select id="disclosure" class="control">
+        <option value="All">All disclosure levels</option>
+      </select>
+      <select id="thesis" class="control">
+        <option value="All">All thesis guidance</option>
+      </select>
+
+      <div class="section-title" style="margin-top:16px;">
+        <h2>Pattern view</h2>
+        <div class="count" id="visibleCount">— visible</div>
+      </div>
+      <div class="chart" id="bars"></div>
+      <div class="searchhint">Tip: combine search with the dropdowns to isolate one policy style.</div>
+    </div>
+
+    <div class="card panel">
+      <div class="section-title">
+        <h2>Universities</h2>
+        <div class="count">Click any card to inspect</div>
+      </div>
+      <div class="cards" id="cards"></div>
+    </div>
+
+    <div class="card panel detail" id="detail">
+      <h2>Selected institution</h2>
+      <div class="headline" id="dName">—</div>
+      <div class="tagrow" id="dTags"></div>
+      <p class="summary" id="dSummary">Select a university card to see the policy summary and main takeaways.</p>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="label">Coursework model</div>
+          <div class="value" id="dCourse">—</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Research model</div>
+          <div class="value" id="dResearch">—</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Disclosure</div>
+          <div class="value" id="dDisclosure">—</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Thesis guidance</div>
+          <div class="value" id="dThesis">—</div>
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="label">Review / compliance</div>
+        <div class="value" id="dReview">—</div>
+      </div>
+      <div class="kpi" style="margin-top:10px;">
+        <div class="label">Privacy / IP emphasis</div>
+        <div class="value" id="dPrivacy">—</div>
+      </div>
+      <h3 style="margin:16px 0 8px; font-size:15px;">Key takeaways</h3>
+      <ul class="bullets" id="dBullets"></ul>
+    </div>
+  </div>
+
+  <!-- Replaced Comparison Table with Full Institutional Policy Document Section -->
+  <div class="section-title">
+    <h2>Full Institutional Policy Text</h2>
+    <div class="count">Displays detailed report registry values for the selected university</div>
+  </div>
+  
+  <div class="card report-section" id="fullReportContainer">
+    <div class="report-header">
+      <h2 id="reportTitle">Select a University to View Complete Policy Details</h2>
+    </div>
+    <div class="report-grid" id="reportGridContent">
+      <!-- Dynamically filled with 7 heading panels -->
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Built from the uploaded policy records report. The dashboard reflects the report’s university-by-university comprehensive comparisons and is designed for deep verification and structural review.
+  </div>
+</div>
+
+<script>
+const data = [{"name": "Columbia University", "region": "US", "course_model": "Instructor-controlled", "research_model": "Supervisor / publication guided", "disclosure": "Expected", "thesis_guidance": "Limited", "review": "Academic integrity + misconduct", "privacy": "High", "summary": "Generative AI is allowed only when it fits academic integrity, instructor expectations, and publication or funding rules.", "highlights": ["Coursework is prohibited unless the instructor explicitly permits it.", "Research use must be transparent in methods, acknowledgements, or similar sections.", "No separate thesis AI review process is published; existing integrity standards apply."]}, {"name": "Yale University", "region": "US", "course_model": "Instructor-controlled", "research_model": "Responsible-use / supervisor guided", "disclosure": "Expected", "thesis_guidance": "Limited", "review": "Academic integrity + AI review framework", "privacy": "High", "summary": "Yale combines course-level AI rules with responsible-use research guidance and strong privacy, ethics, and governance themes.", "highlights": ["Whether AI is allowed depends on the instructor and the course.", "Researchers are expected to critically evaluate outputs and protect data.", "Yale has an AI Review Framework for institutional governance."]}, {"name": "Stanford University", "region": "US", "course_model": "Instructor-controlled", "research_model": "Supervisor / PI guided", "disclosure": "Expected", "thesis_guidance": "Limited", "review": "Honor Code + academic misconduct", "privacy": "High", "summary": "Stanford gives instructors and departments wide flexibility while emphasizing accountability, disclosure, and caution around AI detectors.", "highlights": ["Faculty may permit, partially permit, or prohibit AI use.", "Stanford Medicine requires documenting tool, model, prompt, date, and output used.", "AI detectors are discouraged for high-stakes misconduct decisions."]}, {"name": "Princeton University", "region": "US", "course_model": "Instructor-controlled", "research_model": "Adviser / department guided", "disclosure": "Mandatory when allowed", "thesis_guidance": "Strong", "review": "Academic integrity + governance committee", "privacy": "High", "summary": "Princeton is explicit about disclosure: AI may be used only within course or department limits, and graduate guidance is unusually detailed.", "highlights": ["Students must follow course and departmental policies on generative AI.", "The History Department strongly limits AI in early doctoral training.", "AI contributions to dissertations and publications should be openly acknowledged."]}, {"name": "Harvard University", "region": "US", "course_model": "School-based / instructor controlled", "research_model": "Adviser / publisher guided", "disclosure": "Conditional", "thesis_guidance": "Limited", "review": "School-level integrity processes", "privacy": "High", "summary": "Harvard uses a decentralized school-based model with strong emphasis on originality, publisher requirements, copyright, and confidential data protection.", "highlights": ["All faculty are required to inform students of course generative AI policies.", "Researchers should review publisher and funder requirements before using AI.", "Confidential or non-public research data should not go into public AI tools."]}, {"name": "University of Toronto", "region": "Canada", "course_model": "Default prohibited unless permitted", "research_model": "Supervisor approval required", "disclosure": "Mandatory / documented", "thesis_guidance": "Strong", "review": "Academic misconduct + research misconduct", "privacy": "High", "summary": "U of T combines a permission-based course rule with detailed SGS guidance for graduate milestones, theses, and doctoral examinations.", "highlights": ["AI is not allowed in a course unless the instructor explicitly permits it.", "SGS recommends prior written approval from supervisors and committees.", "Disclosure and description of AI use are expected across graduate milestones."]}, {"name": "McGill University", "region": "Canada", "course_model": "Instructor-controlled", "research_model": "Supervisor guided", "disclosure": "Expected", "thesis_guidance": "Strong", "review": "Academic integrity procedures", "privacy": "High", "summary": "McGill’s research guidance is notably detailed, including thesis-specific disclosure expectations and supervisor consultation.", "highlights": ["Instructors generally determine whether AI is permitted in course work.", "GPS has developed graduate guidance and thesis disclosure frameworks.", "PHI and PCI data are explicitly prohibited from public AI systems."]}, {"name": "University of British Columbia", "region": "Canada", "course_model": "Instructor / program based", "research_model": "Supervisor / committee guided", "disclosure": "Expected", "thesis_guidance": "Strong", "review": "Academic misconduct + research integrity", "privacy": "High", "summary": "UBC uses a decentralized model with strong emphasis on verification, supervisory consultation, and protecting confidential or unpublished materials.", "highlights": ["No blanket university-wide permission or prohibition exists.", "G+PS guidance covers theses, dissertations, comprehensive exams, and publications.", "Students remain responsible for all submitted work."]}, {"name": "McMaster University", "region": "Canada", "course_model": "Instructor approval required", "research_model": "Supervisory / discipline based", "disclosure": "Expected", "thesis_guidance": "Limited", "review": "Academic + research integrity", "privacy": "High", "summary": "McMaster’s guidance is provisional and context dependent, with course-outline options and separate research guidance for graduate work.", "highlights": ["Students are told not to assume AI is permitted and should seek approval first.", "Research guidance is provisional and explicitly aimed at graduate students too.", "AI-related misconduct is handled through existing integrity processes."]}, {"name": "University of Alberta", "region": "Canada", "course_model": "Course / program level", "research_model": "Supervisor guided", "disclosure": "Expected", "thesis_guidance": "Strong", "review": "Academic misconduct + research integrity", "privacy": "High", "summary": "U of A provides one of the broadest graduate AI scopes in the report, including theses, candidacy, qualifying exams, and publications.", "highlights": ["AI misuse can constitute academic misconduct under the Student Academic Integrity Policy.", "GPS guidance explicitly covers thesis writing, candidacy proposals, and examinations.", "Students are encouraged to acknowledge, cite, and reflect on AI use."]}, {"name": "University of Oxford", "region": "UK", "course_model": "Assessment-specific", "research_model": "Research-policy guided", "disclosure": "Expected / conditional", "thesis_guidance": "Moderate", "review": "Academic integrity + research code", "privacy": "High", "summary": "Oxford allows responsible AI use while tying course and research use to rigour, transparency, data protection, and intellectual property requirements.", "highlights": ["AI is not blanket-banned, but assessed work depends on assessment-specific rules.", "Oxford has a formal research policy to support responsible GenAI use.", "A separate postgraduate guide addresses thesis and dissertation use."]}, {"name": "University of Cambridge", "region": "UK", "course_model": "Principles-based / faculty rules", "research_model": "Integrity frameworks", "disclosure": "Mandatory in assessed work", "thesis_guidance": "Moderate", "review": "Academic integrity", "privacy": "High", "summary": "Cambridge relies on central guidance plus faculty and department rules; AI can support learning, but assessed use must be declared.", "highlights": ["AI can support research, summarising, proofreading, and idea generation.", "Undisclosed AI-generated content may be treated as misconduct.", "Graduate students must maintain full responsibility for originality."]}, {"name": "ETH Zurich", "region": "Europe", "course_model": "Responsible-use", "research_model": "Responsible-use", "disclosure": "Expected", "thesis_guidance": "Moderate", "review": "Academic misconduct + doctoral guidance", "privacy": "High", "summary": "ETH encourages engagement with AI while insisting on responsibility, transparency, fairness, and human verification of outputs.", "highlights": ["The creator of content is always responsible for correctness and quality.", "A human-in-the-loop approach is central to ETH guidance.", "AI use is integrated into academic integrity and doctoral frameworks."]}, {"name": "Technical University of Munich", "region": "Europe", "course_model": "Responsible-use / course specific", "research_model": "Responsible-use / university strategy", "disclosure": "Expected", "thesis_guidance": "Moderate", "review": "Existing academic integrity frameworks", "privacy": "High", "summary": "TUM’s AI strategy covers teaching, research, administration, and learning environments, backed by a responsible-implementation framework.", "highlights": ["TUM does not issue a blanket allow/ban rule for coursework.", "Students remain responsible for submitted work and course requirements.", "Ethics, transparency, and human accountability are core themes."]}, {"name": "King's College London", "region": "UK", "course_model": "Permissive but regulated", "research_model": "Doctoral guidance / supervisor informed", "disclosure": "Mandatory", "thesis_guidance": "Strong", "review": "Academic Integrity Meetings + misconduct process", "privacy": "High", "summary": "KCL is the most explicitly permissive in the report, but it requires disclosure, supervisor discussion, and clear responsibility for all submitted work.", "highlights": ["KCL does not ban AI use, including in doctoral thesis writing.", "Students must acknowledge AI use and take full responsibility for content.", "Academic Integrity Meetings are a formal mechanism for suspected misuse."]}];
+
+// Comprehensive repository containing the 7 exact Word file sections for each institution
+const fullReportText = {
+  "Columbia University": {
+    "1. Policy Wording": "University-wide position: Columbia’s policy takes a cautious but generally supportive approach to generative AI. The university states that it embraces generative AI tools while recognizing that they have limitations and risks. The policy emphasizes responsible use, transparency, accountability, privacy, and academic integrity.<br>For students, the policy states that the use of generative AI tools to complete an assignment or examination is prohibited unless a course instructor has clearly granted permission.<br>For researchers, the policy states that anyone using generative AI in research must be transparent about its use and should disclose it in methods sections, acknowledgements, or other appropriate parts of their work.",
+    "2. Scope of the Policy": "The Provost’s policy applies broadly to students, faculty members, researchers, and staff when carrying out activities on behalf of Columbia University. The policy covers coursework and assessments, research activities, data handling, intellectual property and unpublished research, as well as security and privacy considerations. For graduate students, this means that both coursework and research outputs, including theses, dissertations, publications, and conference papers, fall within the scope of the policy.",
+    "3. Approval Processes": "Coursework: Columbia follows an instructor-controlled approach to AI use in coursework. Students may not use AI tools unless the instructor has explicitly allowed them. Faculty members are expected to explain AI-related rules in the course syllabus, identify whether AI use is permitted for specific assignments, and clarify acceptable and unacceptable uses. Students are expected to review course-specific AI requirements, ask for clarification when policies are unclear, and obtain written confirmation when necessary.<br>Research: The university does not have a formal approval process for AI use in research. Instead, researchers are expected to follow the expectations of their supervisors, comply with journal policies, meet funder requirements, adhere to disciplinary standards, and disclose AI use appropriately. Decisions regarding AI use in research are generally made by supervisors, research groups, departments, ethics review processes, and publication venues rather than by a central university body.",
+    "4. Review and Compliance Mechanisms": "Coursework review: Unauthorized use of AI is treated in the same way as other forms of unauthorized assistance, plagiarism, or academic misconduct. Violations may be addressed through established academic integrity and student conduct procedures.<br>Policy review: The Office of the Provost describes the AI policy as a work in progress that will continue to evolve as technology changes and as AI use within the university develops. A Provost Working Group on Generative AI is responsible for creating and updating guidance.",
+    "5. Graduate-Specific Advice": "Explicit graduate guidance: Compared with some universities, Columbia currently provides limited guidance specifically focused on theses and dissertations. However, several research principles clearly apply to graduate research.<br>Transparency: Graduate researchers are expected to disclose AI use where appropriate, including in methods sections, acknowledgements, and other relevant sections of research outputs.<br>Accuracy responsibility: Researchers remain fully responsible for all aspects of their work, including facts, citations, analysis, conclusions, and any AI-generated content that is incorporated into the final document. The university specifically warns that AI systems may invent references, generate inaccurate information, and produce misleading outputs.<br>Publication compliance: Graduate students who intend to publish work arising from their theses or dissertations must also comply with journal requirements. Columbia notes that some journals prohibit AI-generated text, images, or figures entirely.<br>Thesis examination: No publicly available Columbia policy identifies a separate AI review process for thesis examinations. Instead, examiners assess theses and dissertations according to existing standards of academic and research integrity. Under the university’s guidance, responsibility for originality and accuracy remains with the student regardless of any AI involvement.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: Columbia consistently emphasizes transparency in the use of AI. For coursework, students are expected to disclose AI use to instructors. When AI use is permitted, instructors may require citation or acknowledgement of that use. For research, researchers must be transparent about AI use and should disclose it in methods sections, acknowledgements, or other appropriate locations.<br>Editing versus content generation: Columbia does not provide a detailed university-wide distinction between AI-assisted editing, AI-assisted drafting, and AI-generated content creation. Instead, whether a particular use is acceptable depends on instructor requirements in coursework, disciplinary research norms, journal policies, and supervisor expectations.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics and integrity: The university identifies several concerns related to AI, including academic integrity, research integrity, bias, accountability, and responsible use.<br>Intellectual property: The Office of the Provost highlights the protection of unpublished research, intellectual property, confidential information, and clinical data as important policy priorities.<br>Privacy and security: The university warns that information entered into AI systems may become publicly accessible, that sensitive information may be exposed, and that AI tools may create cybersecurity and privacy risks. As a result, graduate researchers working with confidential datasets, human participant data, proprietary information, or unpublished research findings are advised to exercise caution before uploading material to external AI platforms."
+  },
+  "Yale University": {
+    "1. Policy Wording": "Coursework: Yale's academic integrity regulations explicitly address AI use: 'How and whether instructors permit you to use AI writing tools at Yale will vary widely from course to course, and is always subject to each instructor's authority and policy.' The same guidance advises students to check with instructors before using AI tools and not assume permission exists.<br>Research: Yale's AI guidance promotes responsible use rather than prohibition. Researchers are encouraged to evaluate AI outputs critically, understand limitations, protect data, and comply with ethical and regulatory requirements. Yale Library and AI-related resources position AI as a tool that may support research while requiring human oversight and accountability.",
+    "2. Scope of the Policy": "The publicly available Yale guidance applies broadly across students, faculty, researchers, staff, and administrative users of AI systems. The guidance covers coursework and assessments, research activities, data governance, privacy and cybersecurity, intellectual property protection, clinical and health sciences applications, and institutional deployment of AI systems. For graduate students, this means AI use in coursework, thesis preparation, dissertations, publications, grant writing, and research data handling may all be affected by Yale guidance.",
+    "3. Approval Processes": "Coursework Approval: Yale follows a highly decentralized model. Instructor authority: The instructor determines whether AI may be used, which AI tools may be used, which assignments permit AI use, and what disclosures are required. Students are expected to review syllabus requirements, follow assignment instructions, and seek clarification when uncertain. There is no published university-wide approval form or centralized authorization process for coursework AI use.<br>Research Approval: For research, approval mechanisms depend on context. These include faculty supervisor expectations, research group policies, human subjects review requirements, data governance requirements, journal and publisher requirements, and funding agency requirements. Health sciences research involving protected data must additionally comply with Yale privacy, security, and HIPAA-related requirements.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Unauthorized AI use may be addressed through Yale's established academic integrity processes. If AI use violates instructor policies, it can be treated as academic dishonesty or unauthorized assistance.<br>Institutional AI Review: Yale has established an AI governance structure and an AI Review Framework. The framework was developed by the Yale AI Steering Committee to support oversight and evaluation of AI systems used within the university. It emphasizes trustworthiness, ethical compliance, regulatory compliance, risk assessment, and governance review. While this framework primarily governs institutional AI deployment rather than student coursework, it demonstrates Yale's formal review mechanisms for AI-related risks.",
+    "5. Graduate-Specific Advice": "Thesis and Dissertation Expectations: Yale's published dissertation requirements continue to emphasize traditional standards, including original contribution to knowledge, mastery of methods and scholarship, publishable-quality work, and scholarly originality. Although Yale does not currently publish a thesis-specific AI policy comparable to some universities, graduate students remain responsible for ensuring that AI use does not undermine these standards.<br>Research Outputs: Graduate students preparing journal articles, conference papers, dissertations, or thesis manuscripts should also comply with publisher AI policies, journal disclosure requirements, supervisor expectations, and funding body requirements.<br>Thesis Examination: No publicly available Yale policy establishes a dedicated AI review process for dissertation examination. Instead, thesis examination appears to continue under existing standards of originality, scholarly contribution, research integrity, and academic honesty.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: Yale's publicly available guidance consistently stresses transparency and responsible use. Research-focused guidance encourages critical evaluation of AI outputs and awareness of limitations, while instructors may impose their own disclosure requirements in courses.<br>Editing vs Content Creation: Yale does not currently publish a university-wide taxonomy that explicitly distinguishes between all forms of AI-assisted editing and AI-generated content creation. However, a useful indicator comes from Yale's admissions policy, which states that using AI for grammar review, spelling correction, general advice, and topic suggestions is distinguishable from submitting substantive AI-generated content as one's own work.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Yale's AI guidance repeatedly emphasizes responsible use, trustworthy AI, human oversight, bias awareness, and ethical deployment of AI systems. The AI Review Framework was specifically designed to ensure alignment with ethical standards, university values, and regulatory requirements.<br>Intellectual Property: Yale's AI guidance warns users to protect intellectual property, proprietary information, contractually protected information, and sensitive research materials.<br>Privacy and Confidential Research Data: Yale places significant emphasis on privacy protection. Researchers are advised to consider data classifications, confidentiality obligations, research participant protections, HIPAA requirements where applicable, and security risks associated with external AI systems. The health sciences guidance specifically warns that research and clinical data require careful handling before being entered into AI platforms."
+  },
+  "Stanford University": {
+    "1. Policy Wording": "Coursework: Stanford's Board on Conduct Affairs developed Generative AI Policy Guidance to ensure consistency with the Honor Code while allowing faculty flexibility. The university states that the purpose is 'to give sufficient space for instructors to explore uses of generative AI tools in their courses, while providing clear guidance to students about what is and is not consistent with the Stanford Honor Code.' The practical effect is that AI use is determined primarily at the course level.<br>Research: Stanford's publicly available guidance generally treats AI as a research tool whose use must remain consistent with existing standards of research integrity, authorship, accuracy, accountability, and responsible scholarship. Researchers remain responsible for all content submitted under their names.",
+    "2. Scope of the Policy": "Stanford's AI-related guidance applies across undergraduate coursework, graduate coursework, professional education, research activities, scholarly publications, examinations and assessments, and administrative uses of AI. The AI Working Group specifically discusses classroom use, examinations, assessments, departmental policy development, student learning outcomes, and academic misconduct concerns.",
+    "3. Approval Processes": "Coursework: Stanford follows an instructor-controlled model. Faculty may permit AI use, partially permit AI use, prohibit AI use, require disclosure, or design AI-inclusive assessments. The Academic Integrity Working Group recommends that AI expectations be reasonable, clearly communicated, consistently enforced, and regularly discussed with students.<br>Research: Stanford does not appear to maintain a central university-wide approval process for AI use in research. Instead, approval typically depends on research supervisors, principal investigators, departmental expectations, ethics review boards, journal policies, and funding-agency requirements.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Improper AI use may be reviewed through Stanford's Honor Code and academic misconduct processes. The Office of Community Standards remains responsible for enforcement.<br>Academic Integrity Working Group: Stanford established the Academic Integrity Working Group (AIWG) in 2024 to study academic dishonesty, examine AI-related integrity issues, develop guidance, and support departments. Notably, Stanford's AIWG advises caution regarding AI-detection software because of false positives, false negatives, bias concerns, and the inability to reliably determine the extent of AI involvement. As a result, Stanford discourages reliance on AI detectors as evidence.",
+    "5. Graduate-Specific Advice": "Thesis and Dissertation Preparation: Stanford does not currently publish a university-wide dissertation-specific AI policy comparable to some institutions. However, existing guidance implies several expectations: Responsibility remains with the student for factual accuracy, analysis, conclusions, citations, and originality. Disclosure is expected when appropriate (e.g., Stanford Medicine requires documentation of the tool used, model version, prompt, date, and relevant output). AI cannot be an author: Stanford Medicine explicitly states that AI tools may not be listed as authors on scholarly works.<br>Thesis Examination: No publicly available Stanford policy establishes a separate AI-review stage for thesis or dissertation examination. Examination continues under traditional standards.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Stanford generally emphasizes transparency rather than outright prohibition.<br>Editing Uses: Examples that may be permitted depending on instructor or supervisor approval include grammar correction, language editing, summarization, brainstorming, and coding assistance.<br>Content Creation: More substantial uses such as drafting assignment responses, generating essays, producing analysis, and writing major portions of research outputs are subject to instructor, supervisor, department, or publication requirements.<br>Disclosure Expectations: The clearest Stanford language comes from Stanford Medicine, where AI-assisted work should identify the tool name, model version, date used, prompt, and output incorporated.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Stanford's AI guidance consistently emphasizes responsible use, academic integrity, bias awareness, critical evaluation of outputs, and AI literacy. The Stanford Medicine policy specifically requires students to understand hallucinations, bias, limitations, and privacy risks.<br>Intellectual Property: While Stanford's AI guidance is still evolving, researchers are expected to comply with existing university policies governing intellectual property, ownership of research outputs, confidential information, and unpublished research.<br>Privacy and Data Protection: Stanford's guidance highlights the need to understand privacy risks associated with AI platforms. This is especially important for human-subjects research, medical data, protected health information, and confidential research records."
+  },
+  "Princeton University": {
+    "1. Policy Wording": "Coursework: Princeton's central academic integrity guidance places responsibility on students to understand and comply with course-specific AI rules: 'Students are responsible for familiarizing themselves with and adhering to course and departmental policies regarding the use of generative AI.' The same policy identifies potential violations such as directly copying AI output or failing to disclose use.<br>Research: Princeton's research-facing guidance treats AI as a potentially valuable research tool while emphasizing responsible use, verification, and transparency. The University's AI resources highlight AI's role while cautioning users about risks.",
+    "2. Scope of the Policy": "Princeton's AI-related guidance applies across undergraduate coursework, graduate coursework, independent research projects, theses and dissertations, research activities, teaching and learning, and administrative uses of AI. Importantly, the Scholarly Integrity guidance applies to all academic work, while departmental policies may establish stricter requirements for graduate students.",
+    "3. Approval Processes": "Coursework: Princeton follows an instructor-controlled model. The University states that students will encounter courses where AI is prohibited, permitted, or encouraged. The first responsibility is to determine whether, how, and to what extent a given course allows it. Approval occurs through syllabi and assignment instructions.<br>Research: There is no publicly available university-wide approval form for AI use in research. Instead, approval occurs through faculty advisers, dissertation supervisors, and departmental expectations. The History Department policy explicitly requires consultation with advisers before certain AI-assisted research uses are undertaken.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Improper AI use is reviewed through Princeton's academic integrity framework. Examples of violations include submitting AI-generated work as original work, using AI beyond authorized limits, and failing to disclose use.<br>AI Governance: Princeton has established an institutional AI governance structure through its Artificial Intelligence Program Committee, responsible for developing AI policies, reviewing use cases, and assessing risks, primarily governing administrative and operational deployment.",
+    "5. Graduate-Specific Advice": "Among Ivy League universities, Princeton is notable for publishing a department-level graduate AI policy with substantial detail.<br>Graduate Coursework and Early Doctoral Training: The History Department strongly advises against most AI use during the first two years of doctoral training so that students develop reading, writing, and analytical skills personally. It states students should not use AI to do assigned reading, write coursework, or translate work.<br>Dissertation Preparation: After advancement to candidacy, Princeton recognizes some AI uses may become appropriate (e.g., organizing archives, transcribing materials, compiling datasets). However, AI must function like a research assistant, not an author.<br>Dissertation Outputs and Publications: The History Department states that AI contributions should be openly acknowledged in your dissertation and publications.<br>Thesis Examination: No publicly available Princeton-wide policy establishes a dedicated AI review stage during thesis examination.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure Requirements: Princeton's Scholarly Integrity guidance is explicit: if generative AI is permitted, students must disclose its use. Princeton distinguishes disclosure from citation because generative AI is not a source; it expects disclosure statements rather than conventional references.<br>Editing vs. Content Creation: Potentially Acceptable uses include brainstorming, clarification questions, grammar review, and organizational assistance. Generally Prohibited uses include copying AI-generated text, submitting AI-generated writing as one's own, and delegating interpretation, argumentation, or scholarly writing to AI.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Princeton's guidance emphasizes academic integrity, transparency, responsible use, human accountability, and verification of outputs. Graduate students are warned that relying on AI can undermine educational development.<br>Intellectual Property: Princeton's AI guidance treats AI-generated output differently from traditional scholarly sources and requires disclosure rather than citation. It emphasizes careful handling of unpublished work.<br>Privacy and Confidential Information: Princeton's Generative AI Tools Use Policy requires that only University-licensed AI tools be used with certain institutional information and that public AI systems not be used with protected University data."
+  },
+  "Harvard University": {
+    "1. Policy Wording": "University-Level Position: Harvard's central guidance states: 'The University supports responsible experimentation with generative AI tools.' At the same time, Harvard emphasizes several risks, including information security, data privacy, compliance, copyright, academic integrity, and accuracy and hallucinations. Harvard's AI resources repeatedly stress that users remain responsible for the content they submit.",
+    "2. Scope of the Policy": "Harvard's AI guidance applies broadly to undergraduate coursework, graduate coursework, master's programs, doctoral research, theses and dissertations, publications, grant applications, administrative work, and research activities. Because Harvard operates through multiple schools, individual schools may impose additional requirements (e.g., Harvard Graduate School of Education, Harvard Medical School).",
+    "3. Approval Processes": "Coursework: Harvard's dominant model is instructor authority. The Faculty of Arts and Sciences requires instructors to communicate AI expectations to students: 'All faculty are required to inform students of the policies governing generative AI use in class.' Disclosure requirements vary by course.<br>Research: Harvard does not appear to have a university-wide approval form for AI use in research. Instead, approval and oversight generally occur through faculty advisers, dissertation supervisors, principal investigators, research ethics boards, and journal/publisher policies.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Improper AI use may be handled through existing academic integrity procedures. Violations are typically addressed through school-level academic misconduct processes rather than a separate AI disciplinary framework.<br>Ongoing Policy Review: Harvard's Provost guidance explicitly notes that AI guidance is evolving: 'The University will continue to monitor developments and incorporate feedback ... to update our guidelines accordingly.'",
+    "5. Graduate-Specific Advice": "Thesis and Dissertation Preparation: Harvard currently provides limited university-wide dissertation-specific AI rules. However, several research principles clearly apply to graduate students: Responsibility remains with the student for analysis, interpretation, citations, and scholarly originality. Verification is critical as Harvard warns that AI systems can hallucinate facts and invent references.<br>Research Outputs and Publications: Harvard's research guidance states: 'Most academic publishers require researchers using AI tools to document this use in the methods or acknowledgements sections of their papers.' Researchers should review journal policies before submitting work.<br>Thesis Examination: No publicly available Harvard-wide policy creates a separate AI-review stage for thesis examinations.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: Harvard strongly favors transparency. For research outputs, researchers using AI tools should document that use when required by publishers. For coursework, disclosure requirements are determined by instructors.<br>Editing vs. Content Creation: Harvard does not publish a university-wide framework formally categorizing all uses, but grammar correction, editing/polishing, and brainstorming ideas are often permissible if allowed by the instructor, while drafting substantive content or producing assignment answers without authorization may violate policies.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Harvard consistently emphasizes responsible use, academic integrity, human accountability, verification of outputs, transparency, and professional judgment.<br>Intellectual Property and Copyright: Harvard's Provost and HUIT guidance identify copyright and compliance concerns as major AI risks. Researchers are expected to consider copyright implications and licensing restrictions.<br>Privacy and Confidential Research Data: One of Harvard's strongest AI directives concerns confidential information: 'You should not enter data classified as confidential ... including non-public research data ... into publicly-available generative AI tools.' Confidential info may only be used in approved AI environments."
+  },
+  "University of Toronto": {
+    "1. Policy Wording": "Coursework: U of T's academic integrity guidance is explicit: 'Students are not allowed to use generative AI in a course unless the instructor explicitly permits it.' This establishes a default prohibition model. Using generative AI when not authorized may be considered the use of an unauthorized aid under the Code of Behaviour on Academic Matters.<br>Graduate Research: The School of Graduate Studies (SGS) has issued dedicated guidance stating that students should 'seek and document in writing unambiguous approval from their supervisor(s) and supervisory committee in advance of the use of generative AI tools.'",
+    "2. Scope of the Policy": "The guidance applies across coursework (essays, assignments, exams, term tests) and graduate academic milestones (comprehensive examinations, candidacy milestones, language examinations, master's theses, doctoral dissertations, final oral examinations, and research outputs). It also addresses AI use in research activities like searching, outlining, drafting, and data handling.",
+    "3. Approval Processes": "Coursework Approval: The approval model is instructor-centered. Students are instructed to check the syllabus and not assume that an instructor will have the same policy across all courses.<br>Graduate Research Approval: For graduate research, U of T requires a high level of oversight. SGS recommends prior written approval from supervisors, prior written approval from supervisory committees, and formal documentation of the approval process.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Unauthorized AI use may be investigated under the University's Code of Behaviour on Academic Matters as an academic offence.<br>Research Misconduct Review: SGS guidance explicitly references the Policy on Ethical Conduct in Research and the Framework to Address Allegations of Research Misconduct.<br>Institutional Review: U of T established an AI Task Force to develop institutional recommendations regarding AI in teaching, learning, and governance, emphasizing a human-centred approach.",
+    "5. Graduate-Specific Advice": "Thesis Preparation: The SGS guidance directly addresses AI use in thesis preparation, warning that AI can fabricate references and reproduce bias. It states: 'Students remain responsible for the content of their thesis and other academic works.'<br>Comprehensive Exams and Candidacy: Students are expected to obtain approval before using AI in connection with these milestones.<br>Doctoral Thesis and Final Oral Examination: AI use associated with the thesis defence is expected to be approved, documented, transparent, and consistent with research integrity standards.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure Requirements: U of T's guidance strongly emphasizes transparency. SGS states that 'careful attention must be paid to appropriate citation and description of the use of generative AI tools' in searching, designing, outlining, drafting, writing, and editing.<br>Editing vs Content Creation: The SGS guidance explicitly includes both editing and content generation. Examples include language editing, rewriting, drafting text, or creating images. Both types require oversight, approval, and transparency; editing is not automatically acceptable over content creation.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: The University frames AI use through academic integrity, research integrity, and human responsibility. Students are warned that AI can hallucinate and reproduce bias.<br>Intellectual Property: It emphasizes proper citation, proper attribution, disclosure of AI use, and compliance with disciplinary norms and publication requirements.<br>Privacy and Confidential Information: U of T's academic integrity guidance advises: 'Do not input any private, confidential or identifying information into generative AI.' Information entered may be retained and reused."
+  },
+  "McGill University": {
+    "1. Policy Wording": "Coursework: McGill has not established a single university-wide rule that universally permits or prohibits AI use in coursework. Instead, course-level policies govern. McGill's academic integrity regulations continue to apply regardless of whether AI is involved; unauthorized assistance and plagiarism remain academic offences.<br>Research: Graduate and Postdoctoral Studies (GPS) has issued dedicated guidance for graduate students: 'GPS has developed comprehensive guidelines for graduate students on using generative AI in research.'",
+    "2. Scope of the Policy": "Coursework: McGill's teaching guidance applies to assignments, essays, projects, exams, and course-specific academic work.<br>Research and Graduate Degrees: GPS guidance applies to master's research, doctoral research, theses, dissertations, scholarly publications, research data analysis, literature reviews, and academic writing associated with research degrees. GPS guidance is strictly research-focused.",
+    "3. Approval Processes": "Coursework: McGill leaves decisions about AI use to instructors and programs. Teaching and Learning resources provide examples of course-outline statements that instructors can adopt, reflecting varying levels of permission or restriction.<br>Graduate Research: GPS explicitly recommends discussion with supervisors. Students with questions are encouraged to discuss this topic with their supervisors and graduate program directors, establishing a supervisor-governed model.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Improper AI use may be addressed through existing academic integrity procedures. AI-related misconduct is handled under existing frameworks (plagiarism, cheating, unauthorized assistance) rather than a separate process.<br>Institutional Oversight: McGill established the STL AI Working Group to develop recommendations regarding generative AI in teaching and learning, supporting instructors and addressing privacy concerns.",
+    "5. Graduate-Specific Advice": "Thesis Preparation: McGill is one of the few universities that has published graduate-specific AI guidance through GPS. Notably, GPS announced the 'GenAI Research Statement and Disclosure Guidelines for Theses' for master's and doctoral theses to provide a framework for transparency.<br>Thesis Outputs: Graduate students are expected to discuss AI use with supervisors, understand AI limitations, appropriately disclose AI involvement, and maintain research integrity standards.<br>Thesis Examination: No publicly available McGill policy establishes a separate AI-specific thesis examination procedure. Theses continue to be evaluated according to traditional criteria.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: McGill's GPS guidance places significant emphasis on disclosure, utilizing the thesis-specific disclosure frameworks to ensure transparency regarding AI use in research and thesis preparation.<br>Editing vs. Content Creation: McGill's publicly available guidance generally does not establish a strict university-wide distinction. Grammar correction, language editing, brainstorming, and literature exploration are potentially acceptable with appropriate oversight or disclosure, while drafting substantive research content and producing original scholarly arguments require careful supervisor oversight and disclosure.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: McGill explicitly states that AI should be used 'responsibly, ethically, and securely.' Concerns involve academic integrity, intellectual production, and privacy protection.<br>Intellectual Property: McGill's IT Services guidance specifically addresses copyright, instructing users to use their own content, use publicly available content, and avoid material where permission has not been granted by copyright holders.<br>Privacy and Confidential Information: McGill's AI Guidelines contain explicit privacy safeguards: removing personally identifying information and avoiding the use of sensitive data. McGill specifically states that Personal Health Information (PHI) and Payment Card Industry (PCI) data are prohibited in public AI systems."
+  },
+  "University of British Columbia": {
+    "1. Policy Wording": "Coursework: UBC does not impose a university-wide prohibition on AI use. Instead, students must follow instructor expectations. The central principle is that students must not use AI in ways that constitute unauthorized assistance or misrepresentation of authorship.<br>Graduate Research: Graduate and Postdoctoral Studies (G+PS) states that graduate students remain responsible for all work submitted toward degree requirements, regardless of whether AI tools were used. The guidance emphasizes transparency, accountability, and scholarly integrity.",
+    "2. Scope of the Policy": "The guidance applies broadly across coursework (assignments, essays, reports, presentations, projects, examinations) and graduate research (master's theses, doctoral dissertations, comprehensive examinations, research proposals, scholarly publications, conference papers).",
+    "3. Approval Processes": "Coursework: The approval model is instructor-driven. Students are expected to review the syllabus and assignment instructions, recognizing that AI permissions may differ across courses.<br>Graduate Research: G+PS strongly encourages graduate students to discuss AI use with supervisors, supervisory committees, and graduate programs. Graduate students are expected to obtain guidance before incorporating AI into significant aspects of research.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: Improper AI use may be reviewed under UBC's academic misconduct procedures (unauthorized assistance, plagiarism, misrepresentation of authorship) through existing frameworks.<br>Research Integrity Review: Research involving AI remains subject to Research Integrity policies, Responsible Conduct of Research requirements, and Research Ethics requirements. Potential issues involving fabrication or falsification may be reviewed under existing research misconduct frameworks.",
+    "5. Graduate-Specific Advice": "Thesis and Dissertation Preparation: UBC's G+PS guidance is specifically directed toward graduate students: Students remain fully responsible for accuracy, originality, interpretation, citations, arguments, and conclusions. Graduate students are expected to independently verify facts, references, and quotations, as AI systems can generate fabricated information.<br>Thesis Examination: No publicly available UBC policy establishes a separate AI-review stage during thesis examination. Theses continue to be evaluated according to traditional criteria.<br>Research Outputs: Graduate students preparing journal articles or dissertations are expected to follow publisher requirements and disciplinary norms.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: UBC strongly encourages transparency regarding AI use. Graduate students are advised to disclose AI use where required, follow disciplinary norms, and discuss disclosure expectations with supervisors.<br>Editing vs. Content Creation: UBC does not currently publish a rigid university-wide distinction, but supports a risk-based approach. Lower-risk uses (grammar correction, language refinement, proofreading, formatting, brainstorming) are often considered acceptable. Higher-risk uses (generating research arguments, drafting substantive thesis sections, producing analytical content) require greater caution and supervisory oversight.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: UBC's AI guidance emphasizes academic integrity, transparency, accountability, fairness, critical evaluation of outputs, and human oversight.<br>Intellectual Property: UBC highlights concerns regarding copyright, ownership of content, licensing restrictions, and attribution requirements, advising users to understand terms of service before uploading material.<br>Privacy and Confidential Research Data: UBC's guidance repeatedly warns against placing confidential information into public AI systems. Particular caution is advised for human-subject research data, unpublished manuscripts, proprietary information, and personal information."
+  },
+  "McMaster University": {
+    "1. Policy Wording": "Coursework: McMaster's guidance explicitly states that students should not assume AI is permitted: 'Before using a generative AI tool as part of your learning at McMaster University ... be sure you have approval from your course instructor.' Unauthorized use may become an academic integrity matter.<br>Research: McMaster's research guidelines describe AI as a tool that can provide opportunities and risks across preparation, conducting research, and dissemination. The research guidance adopts a responsible-use approach rather than a prohibition model.",
+    "2. Scope of the Policy": "Coursework: The Teaching and Learning Guidelines apply to assignments, essays, projects, assessments, and examinations. McMaster has embedded AI policy options directly into course outline templates ('Use Prohibited', 'Some Use Permitted', and 'Unrestricted Use').<br>Research: The Research Guidelines apply broadly to faculty researchers, graduate students, undergraduate student researchers, and research staff, covering project planning, literature review, data analysis, and manuscript preparation.",
+    "3. Approval Processes": "Coursework: McMaster's student guidance repeatedly emphasizes instructor approval. Students are advised to review course policies and clarify expectations before using AI.<br>Research: McMaster's research guidance does not establish a formal university-wide approval form. Instead, the guidelines emphasize disciplinary norms, supervisor expectations, granting-agency requirements, and publication requirements. Researchers are instructed to carefully review the expectations of external bodies.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: McMaster handles AI-related misconduct through existing academic integrity procedures, where instructors investigate and students are given an opportunity to respond.<br>Research Integrity Review: McMaster explicitly links AI use to academic integrity, research integrity, and responsible conduct of research. Potential issues are reviewed through existing research integrity frameworks.<br>Policy Review: McMaster repeatedly describes its AI guidance as 'provisional,' noting that the rapid pace at which technology is developing means guidelines will need review and revision.",
+    "5. Graduate-Specific Advice": "Graduate Student Scope: McMaster's research guidelines explicitly recognize that graduate students occupy a distinct position: 'For graduate students engaged in graduate research, the guidelines here are pertinent.' Students should consider both coursework and research guidelines.<br>Thesis Preparation: No standalone thesis-specific disclosure wording is published, but research guidance applies to thesis research, dissertation research, and manuscript preparation. Students must ensure use remains consistent with originality and disciplinary norms.<br>Thesis Examination: No publicly available McMaster policy creates AI-specific thesis examinations or defenses; evaluation uses traditional criteria.<br>Research Outputs: Graduate students are advised to pay attention to the requirements of publishers, journals, and granting agencies.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: McMaster's student guidance directly asks students to consider: 'How should I document and disclose when I have used generative AI?' It identifies categories of use (brainstorming, drafting, copy editing, coding) to emphasize transparency.<br>Editing vs. Content Creation: McMaster does not impose a university-wide rule distinguishing editing from content generation. Lower-risk uses (brainstorming, copy editing, organizational assistance) and higher-risk uses (drafting, generating substantive content, coding) depend entirely on instructor expectations and research context.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: McMaster consistently frames AI use through academic integrity, research integrity, responsible scholarship, critical evaluation, and transparency.<br>Intellectual Property: The research guidelines acknowledge that researchers must comply with journal requirements, publisher requirements, and external agency requirements, which may include copyright considerations.<br>Privacy and Confidential Information: McMaster's guidance emphasizes caution regarding AI tools and institutional responsibilities, noting concerns about privacy and reliability in relation to AI detection technologies. Researchers should exercise caution when handling confidential research data or unpublished findings."
+  },
+  "University of Alberta": {
+    "1. Policy Wording": "Coursework: The University explicitly links AI use to academic integrity and states that misuse of AI can constitute academic misconduct. The Centre for Teaching and Learning notes that 'misuse of artificial intelligence applications for academic advantage may constitute academic misconduct under the Student Academic Integrity Policy.' Decisions are made at the course or program level.<br>Research and Graduate Degrees: Graduate and Postdoctoral Studies (GPS) recognizes that AI tools are increasingly being used and has developed guidance specifically addressing thesis writing, candidacy proposals, qualifying examinations, comprehensive examinations, scholarly publications, literature reviews, and research workflows.",
+    "2. Scope of the Policy": "Coursework: The guidance applies to assignments, essays, projects, coding tasks, examinations, and assessments. Instructors are encouraged to explicitly identify permitted and prohibited uses inside syllabi.<br>Graduate Research: The GPS guidance specifically covers master's theses, doctoral dissertations, candidacy proposals, qualifying exams, comprehensive exams, journal articles, scholarly publications, literature reviews, and data analysis and simulation.",
+    "3. Approval Processes": "Coursework: The University places primary authority with instructors. Sample syllabus statements include models where AI use is prohibited, requires prior approval, or requires disclosure. Published examples require students to 'Obtain prior instructor approval for AI use in designated assignments.'<br>Graduate Research: Graduate guidance strongly emphasizes supervisory oversight. GPS guidance was developed specifically to assist supervisors and graduate students in determining whether AI may be used, how it may be used, and how it should be acknowledged.",
+    "4. Review and Compliance Mechanisms": "Academic Integrity Review: The Student Academic Integrity Policy remains the primary enforcement mechanism. The University explicitly identifies misuse of AI tools as potentially falling under cheating, unauthorized assistance, contract cheating, and other misconduct reviewed through established procedures.<br>Research Oversight: Graduate and research AI use remains subject to supervisory review, research integrity expectations, publication requirements, and disciplinary standards.<br>Ongoing Policy Development: The University references a developing 'Framework for Responsible and Ethical Use of AI at the University of Alberta.'",
+    "5. Graduate-Specific Advice": "Thesis Preparation: U of A has some of the most explicit graduate-specific AI guidance among Canadian universities. The GPS materials directly address questions such as: Can AI be used for thesis writing? Can AI be used for editing? Can AI be used for candidacy proposals? How should AI use be acknowledged? It helps navigate AI use in research writing.<br>Thesis Examination and Graduate Milestones: The GPS guidance explicitly covers candidacy proposals, qualifying exams, comprehensive exams, thesis writing, and scholarly publications. Traditional academic standards continue to apply for defenses.<br>Research Outputs: Graduate students are expected to consider AI use in relation to journal policies and authorship standards, explicitly asking: 'How do I formally acknowledge if I use generative AI tools in my research and writing?'",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: Transparency is a recurring theme. The University recommends that students acknowledge AI use, cite AI-generated content, disclose prompts, and provide reflections on how AI was used. The Centre for Teaching and Learning provides examples where students submit reflective statements describing AI involvement.<br>Editing vs. Content Creation: U of A's guidance explicitly distinguishes between different forms of AI assistance. Editing and Support Functions (grammar assistance, editing, reviewing material, clarifying concepts) are compared to educational support tools and may be acceptable. Content Creation (generating assignment content, producing scholarly writing, completing coursework) represents higher-risk uses. The University repeatedly warns that students should not 'offload work to GenAI.'",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Responsible and ethical use is a core principle. Students and researchers are advised to critically evaluate AI outputs for hallucinations, inaccuracies, bias, and harmful content, stressing that AI outputs may appear convincing while still being incorrect.<br>Intellectual Property and Attribution: The University places strong emphasis on citation, attribution, transparency, and acknowledgement of AI contributions. Instructors are encouraged to establish clear expectations regarding citation standards.<br>Privacy and Confidential Information: U of A's guidance highlights concerns regarding sharing information with AI systems and reliability of outputs, encouraging careful consideration before uploading sensitive or confidential information to public AI systems."
+  },
+  "University of Oxford": {
+    "1. Policy Wording": "Coursework and Assessment: Oxford's student guidance states that AI tools 'must be used responsibly and ethically, in accordance with the academic standards of rigour and integrity that are expected of you as a student at Oxford.' Students are expected to use AI with integrity, honesty, transparency, and critical evaluation. Oxford does not impose a blanket prohibition for learning, but assessed work depends on assessment-specific requirements.<br>Research: Oxford's formal research policy states that its purpose is 'to ensure the responsible use of GenAI in research and to provide clear guidelines for its integration into the research process.' The University explicitly supports the use of AI in research while requiring compliance with integrity, transparency, data protection, and info security.",
+    "2. Scope of the Policy": "Research Policy Scope: Oxford's research policy covers the substantive use of AI across the research lifecycle, including funding applications, literature reviews, research design, hypothesis development, data analysis, coding, transcription, dissemination, and research assessment. Substantive use is defined as interpreting data, undertaking literature reviews, identifying research gaps, generating code, or producing documents based on source materials.<br>Who Is Covered?: The policy applies to academic staff, researchers, postgraduate research students, visiting researchers, students conducting research, and professional staff supporting research.",
+    "3. Approval Processes": "Coursework: Oxford does not require a universal approval process for student AI use. Instead, students follow assessment instructions, comply with course-specific rules, and meet integrity standards. Individual departments may impose additional restrictions.<br>Research: Oxford does not require formal pre-approval for every AI use in research. Instead, researchers must ensure that AI use complies with funder requirements, publisher requirements, ethics approvals, and data protection requirements. Uploading personal data for research purposes constitutes processing and may require ethics approval.",
+    "4. Review and Compliance Mechanisms": "Research Integrity Review: Oxford explicitly states: 'Use of GenAI in research is within the scope of research conduct.' Potential breaches are reviewed under the Code of Practice and Procedure on Academic Integrity in Research. Misconduct is handled through established research integrity procedures.<br>Policy Review Mechanism: Oxford has established a formal review process where a policy advisory group will, on a termly basis, undertake a review of the policy, its effectiveness, emerging uses, and new risks.",
+    "5. Graduate-Specific Advice": "Thesis Preparation: Oxford has published dedicated guidance for postgraduate research students. The MPLS Graduate School guidance specifically addresses DPhil theses, MSc by Research theses, transfer of status assessments, confirmation of status assessments, and viva examinations. Students are reminded that they remain bound by Oxford's declaration of authorship: 'the work [you] are submitting is entirely [your] own work, except where otherwise indicated.'<br>Thesis Examination and Viva: Oxford's guidance explicitly allows examiners to discuss AI use during examinations: 'DPhil examiners are invited to discuss Gen AI use with the student.' Students must be prepared to provide 'a detailed and critically reflective account' of their AI use, explaining why it was used and how outputs were verified.<br>Research Outputs: Oxford's research policy applies to journal articles, conference papers, grant applications, and dissertations. Researchers are expected to follow publisher requirements and disciplinary norms.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure Requirements: Oxford explicitly requires disclosure of substantive AI use: 'users should declare the substantive use of GenAI tools in their work.' Declarations include tool name, version, date used, how it was used, and how it influenced the process. Prompts and outputs should also be made available where appropriate.<br>Editing vs. Content Creation: Oxford makes one of the clearest distinctions. Uses Generally Not Requiring Declaration include local editing tools (grammar assistants, spell-checkers, code debuggers), language translation, bibliography generation, and general subject familiarisation. Uses Requiring Declaration include substantive uses defined as literature reviews, research design, hypothesis generation, data interpretation, code generation, and document generation from source materials.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Oxford requires AI use to align with transparency, rigour, respect, research integrity, and ethical conduct. Students are advised to critically evaluate all AI-generated outputs.<br>Intellectual Property: Oxford explicitly requires compliance with intellectual property law, copyright requirements, licensing obligations, and export control requirements. Researchers must consider whether terms of use permit the intended use.<br>Privacy and Data Protection: Oxford places particularly strong emphasis on privacy. The policy states that researchers must comply with data protection legislation and ethics approvals. Uploading personal data constitutes data processing. The University highlights secure institutional access to AI tools like ChatGPT Edu to provide stronger protections."
+  },
+  "University of Cambridge": {
+    "1. Policy Wording": "Coursework (Students): Cambridge student guidance explicitly states that generative AI can be used to support learning (e.g. research, summarising, proofreading, idea generation), but must be used responsibly and in line with the AI usage policy, and must be declared in assessed work. Unacknowledged AI-generated content may be treated as academic misconduct.<br>Research (University Framework): Cambridge research integrity policy is principles-based, requiring honesty, transparency, rigour, and accountability. AI is not banned, but must align with ethics standards, legal obligations, authorship rules, and publication integrity. Cambridge publishing policy explicitly states that AI tools cannot be listed as authors.",
+    "2. Scope of the Policy": "Coursework Scope: The student AI guidance applies to coursework assignments, essays, written submissions, research projects within taught programmes, and study support activities (notes, revision, drafting support). It includes both formative use and summative use.<br>Research Scope: University research integrity frameworks apply to PhD and postgraduate research, staff research projects, publications, grant applications, research involving human participants or data, and authorship and dissemination practices.",
+    "3. Approval Processes": "Coursework: There is no single university-wide approval system for AI use in coursework. Instead, permission is course-by-course or faculty-by-faculty. Absence of permission generally means restriction or prohibition in assessed work contexts. Students may be required to declare AI use in submissions.<br>Research: There is no formal 'AI approval application' process for research use. Instead, approval is embedded in existing mechanisms such as research ethics approval (especially for human data), data protection compliance checks, supervisory oversight (PhD level), and publication/funder compliance requirements. Certain AI uses may trigger ethics review.",
+    "4. Review and Compliance Mechanisms": "Coursework Review: AI misuse is handled under academic misconduct and plagiarism frameworks, departmental examination procedures, and normal exam board processes. Undisclosed AI use can be treated as misconduct under plagiarism rules.<br>Research Review: Research-related AI issues are governed by the Research Misconduct Policy, Ethics Review Committees (REC structures), and Research Integrity Advisory Panels. Investigations follow standard misconduct procedures.<br>Policy Review Mechanism: Cambridge does not state a single fixed AI-policy review cycle in the main university policy pages. Guidance evolves via governance and advisory structures such as research integrity panels.",
+    "5. Graduate-Specific Advice": "Thesis Preparation (PhD/MPhil): Graduate research students are expected to maintain full responsibility for originality of thesis work, ensure transparent use of tools in writing and analysis, and follow supervisor guidance. The core principle is that the student remains responsible for the intellectual content of the thesis.<br>Thesis Examination (Viva / Assessment): Cambridge guidance does not yet define a single universal AI viva procedure. However, under research integrity expectations, examiners may question the research process and authorship, and students must be able to explain how work was produced.<br>Research Outputs (Papers, Publications, Theses): Cambridge publishing ethics rules include that AI cannot be listed as an author, authors remain responsible for accuracy and integrity, and AI-assisted writing must comply with publisher expectations.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure Expectations: Cambridge student guidance states that AI use in assessed work must be declared. Students should include brief statements describing AI assistance, noting tools used for proofreading, summarising, or idea generation.<br>Editing vs Content Creation: Cambridge distinguishes between the following: Permitted / Lower-Risk Uses include proofreading and grammar correction, summarising notes, generating ideas or outlines, explaining concepts, and organising study material. High-Risk / Restricted Uses include submitting AI-generated text as your own work, failing to acknowledge AI assistance, and over-reliance instead of independent reasoning. Students must not outsource assessed intellectual work.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Cambridge embeds AI use within broader principles of honesty, transparency, accountability, avoidance of plagiarism, and research integrity compliance. Key risks highlighted include inaccuracy ('hallucinations'), bias, and lack of transparency.<br>Intellectual Property (IP): Cambridge publishing guidance states that AI cannot hold authorship rights, human authors retain responsibility for content, and AI-generated material must be carefully managed. Researchers must comply with copyright law and licensing terms.<br>Data Protection and Confidentiality: Cambridge guidance emphasises that users should not upload sensitive or restricted data to external AI tools without permission, must comply with data protection obligations (e.g. GDPR), and should exercise special care with personal or confidential research data."
+  },
+  "ETH Zurich": {
+    "1. Policy Wording": "Core Institutional Position: ETH explicitly encourages engagement with AI while emphasizing academic integrity: 'ETH encourages students and lecturers to engage with GenAI and appeals for responsibility, transparency and fairness.' Its framework states it is crucial to understand how GenAI functions, explore opportunities, and be aware of limitations.<br>Academic Integrity: ETH's central academic integrity guidance states: 'The creator of content is always responsible for its correctness and quality.' This principle applies across coursework, exams, research outputs, and theses, emphasizing a 'human-in-the-loop' approach.",
+    "2. Scope of the Policy": "Coursework and Teaching: The guidance applies to assignments, projects, coursework, examinations, presentations, learning materials, and assessment and feedback processes.<br>Research and Scholarly Work: ETH's guidance extends to scientific papers, doctoral theses, master's theses, literature reviews, publication activities, scientific writing, and research dissemination. The ETH Library notes generative AI is increasingly used throughout the research lifecycle.",
+    "3. Approval Processes": "Coursework: ETH deliberately avoids a single university-wide rule: 'Lecturers are encouraged to establish rules and guidelines regarding the use of generative artificial intelligence for assignments, projects and assessments in their courses.' Individual instructors define acceptable use.<br>Thesis and Research Work: ETH's declarations of originality now include AI-specific provisions. Students and supervisors must agree whether no generative AI was used, or generative AI was used and appropriately disclosed: 'The use of generative AI as a tool and its source declarations has been agreed with the supervisor,' creating an explicit supervisor-review process.",
+    "4. Review and Compliance Mechanisms": "Academic Misconduct Review: ETH does not create a separate AI misconduct process. If AI tools are used contrary to instructions, existing processes (disciplinary regulations, plagiarism investigations) continue to apply.<br>AI Detection: ETH explicitly cautions against relying on AI detectors: 'Technical recognition of output generated using generative AI is currently unreliable and will probably remain so in the future.' It notes neither software nor manual testing can determine beyond doubt whether a work was optimized with GenAI, representing a strong institutional stance against detection software.",
+    "5. Graduate-Specific Advice": "Doctoral Students: ETH explicitly incorporates AI into doctoral integrity guidance, offering training courses on ethics and scientific integrity as part of its doctoral program covering responsible AI use.<br>Thesis Preparation: ETH's doctoral regulations require that quotations be properly cited, reused content be attributed, originality be maintained, and contributions be clearly documented, defining the doctoral thesis as 'an independent original work.'<br>Thesis Examination: Supervisors approve thesis declarations, originality statements contain AI provisions, and candidates remain responsible for all content. AI issues are reviewed through existing doctoral examination and research-integrity processes.<br>Publications and Research Outputs: For cumulative theses and co-authored publications, ETH requires: 'the individual authors' own contribution must be clearly recognisable and declared accordingly,' aligning closely with AI transparency expectations.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure Requirements: ETH's guidance is explicit: 'The use of generative AI should be made transparent at all times.' Users must 'be explicit about which content or parts of materials and work have been created with the help of generative AI.'<br>Citation of AI: ETH requires AI-generated content to be referenced appropriately: 'This must also always be correctly indicated when images and texts are generated by generative AI,' pointing users toward citation standards from APA, MLA, Chicago, IEEE, and Harvard styles.<br>Editing vs. Content Creation: ETH does not publish a rigid list. Lower-risk uses include editing, proofreading, research support, literature exploration, and drafting assistance (transparent and approved). Higher-risk uses include generating substantive academic content, producing assessment submissions without disclosure, or creating research outputs presented as entirely human-generated.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: ETH emphasizes responsible AI use. Users are warned that AI may hallucinate, contain bias, or generate false references: 'The task of establishing this connection lies with the user.' Researchers remain accountable for verifying outputs.<br>Intellectual Property and Copyright: ETH places significant emphasis on copyright protection: 'It is important to respect the privacy and copyright of the content being worked with.' If data is passed on to AI-based tools, it must be clarified in advance that no rights are being violated. Thesis Copyright: ETH explicitly states: 'The copyrights to a doctoral thesis are held solely by the author.'<br>Privacy and Confidential Data: ETH warns researchers to consider AI providers' handling of data, noting that user input is often reused for training: 'For private or non-publicly available data, only tools that guarantee data protection regulations should be used,' which stands as one of ETH's strongest requirements."
+  },
+  "Technical University of Munich": {
+    "1. Policy Wording": "Institutional Position: TUM's AI Strategy states that AI should be implemented across teaching, research, administration, and learning environments under a framework that includes ethics, transparency, responsible implementation, and innovation, providing 'a framework for the responsible implementation and use of AI technologies across the university.'<br>Academic Integrity: TUM has not published a single university-wide rule stating either 'AI is allowed' or 'AI is prohibited' for all coursework. Instead, AI use is treated within existing frameworks governing authorship, academic integrity, examination conduct, plagiarism, and scientific integrity. Students remain responsible for submitted work.",
+    "2. Scope of the Policy": "Coursework and Teaching: The AI Strategy explicitly covers curriculum integration, AI-supported learning, assessment design, educational technologies, and teaching activities (assignments, reports, projects, examinations, and course-related written work).<br>Research: The AI Strategy explicitly covers research activities, AI-enabled research, research infrastructure, responsible AI development, and ethical AI use. Research students, doctoral candidates, and academic staff fall within the scope.",
+    "3. Approval Processes": "Coursework: TUM follows a decentralized approval model. Instructors determine acceptable AI use, course-specific rules govern assignments, and examination requirements may differ by department and module. Students should review the module syllabus and consult the instructor. There is no university-wide pre-approval process.<br>Research and Theses: For research projects and theses, approval is embedded in existing academic supervision structures (supervisor oversight, doctoral committee oversight, ethics approval, and compliance with dissertation regulations). Doctoral candidates should discuss usage expectations with supervisors before submission, consistent with the University's emphasis on transparency.",
+    "4. Review and Compliance Mechanisms": "Coursework Misconduct: AI-related concerns are reviewed through existing mechanisms governing plagiarism, unauthorized assistance, examination misconduct, and academic dishonesty. TUM has not established a separate AI misconduct tribunal.<br>Research Integrity Review: Research-related concerns are reviewed through research integrity procedures, scientific misconduct procedures, doctoral examination regulations, and ethics review structures. The Institute for Ethics in AI explicitly states that it adheres to TUM's research codes.<br>AI Strategy Governance: TUM's AI Strategy was developed through a university-wide governance process involving academic experts, students, administrative units, vice deans, and digitalization leadership, designed to evolve alongside technological developments.",
+    "5. Graduate-Specific Advice": "Master's Theses: Existing thesis requirements continue to apply, including originality, proper attribution, academic integrity, and independent scholarly work. Students should seek supervisor guidance regarding AI-assisted drafting, coding, data analysis, or figures.<br>Doctoral Dissertations: TUM doctoral regulations continue to require independent scholarly contribution, proper citation, compliance with scientific integrity standards, and a declaration of originality, regardless of whether AI tools are used.<br>Thesis Examination: No university-wide rule establishes AI-specific dissertation defense procedures. However, examiners retain authority to evaluate authorship, methodology, and originality. Candidates should be prepared to explain whether AI was used, how it was used, and how human judgment remained involved.<br>Research Outputs: Research outputs affected include theses, dissertations, journal articles, conference papers, grant proposals, and technical reports. Researchers remain responsible for all content submitted.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure: Although TUM has not published a detailed disclosure taxonomy, its AI Strategy repeatedly emphasizes transparency, responsible use, and accountability. Disclosure of substantive AI involvement is increasingly expected in research and academic writing, especially where AI contributes materially to content creation.<br>Editing vs. Content Creation: Lower-risk uses commonly accepted include grammar correction, language improvement, formatting assistance, proofreading, translation support, and coding assistance under supervision, functioning as editorial support. Higher-risk uses include generating substantial portions of assessed work, generating research findings, writing literature reviews, drafting arguments without disclosure, or producing content represented as solely human-authored.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: Ethics is one of the explicit pillars of the TUM AI Strategy, identifying ethical AI deployment, societal impacts, responsible innovation, and transparency as core considerations. TUM's broader ecosystem includes significant work through the Institute for Ethics in Artificial Intelligence.<br>Intellectual Property (IP): TUM's published materials emphasize compliance with academic authorship requirements, research integrity rules, and intellectual property obligations. Researchers must consider copyright ownership, software licenses, publisher requirements, and platform terms of use.<br>Privacy and Confidentiality: Existing obligations remain applicable, including GDPR compliance, protection of research data, confidentiality of unpublished research, and secure handling of personal data. Researchers should avoid uploading sensitive or confidential research materials into external AI systems without authorization."
+  },
+  "King's College London": {
+    "1. Policy Wording": "General Position: KCL's student guidance explicitly states: 'No, King's does not ban the use of any type of AI.' However, students are expected to critically evaluate AI outputs, maintain ownership of submitted work, comply with academic integrity requirements, and acknowledge AI use appropriately. The University aligns its approach with the Russell Group principles, including AI literacy, ethical AI use, academic rigor, and integrity.<br>Doctoral Research: KCL's doctoral guidance states: 'Yes, students are permitted to make use of generative AI tools in their thesis writing processes.' It warns: 'Where a student's use of generative AI tools in their thesis writing exceeds the circumstances permitted by this guidance, they will risk breaching the Academic Misconduct Policy.'",
+    "2. Scope of the Policy": "Coursework: The student guidance applies to essays, coursework, reports, projects, presentations, programming assignments, and summative assessments within the broader academic integrity framework.<br>Research Degrees: The doctoral guidance applies to PhD theses, professional doctorates, doctoral assessments, thesis preparation, oral examinations (vivas), and supervisory processes, intended to be read alongside KCL's postgraduate research regulations.",
+    "3. Approval Processes": "Coursework: KCL does not operate a central AI approval system. Instead, programme teams, faculties, and individual module leaders may set specific restrictions or permissions. The University advises students: 'Ask if you are uncertain about what is allowed in any given assessment.'<br>Doctoral Research: KCL strongly encourages discussions between doctoral students and supervisors before AI tools are used. The guidance states that students and supervisors 'should discuss potential issues and concerns prior to any use of generative AI tools.' Consultation with supervisors is an important part of governance.",
+    "4. Review and Compliance Mechanisms": "Coursework: If inappropriate AI use is suspected, students may be referred under the Academic Misconduct process. Possible outcomes include warnings, reassessment, suspension, or expulsion.<br>Academic Integrity Meetings (AIM): KCL has a formal review process called an Academic Integrity Meeting (AIM). During an AIM, staff may examine how the assessment was prepared, concerns about authorship, and the student's explanation of their work process.<br>Doctoral Assessment: KCL has not created a separate AI-specific doctoral misconduct process. Existing mechanisms remain in place, including thesis examination, viva voce examination, academic misconduct procedures, and postgraduate research regulations.",
+    "5. Graduate-Specific Advice": "Thesis Preparation: KCL explicitly permits AI use during thesis writing, establishing that students should discuss AI use with supervisors, understand disciplinary norms, disclose AI use, and take full responsibility for thesis content: 'Students should declare their use of generative AI tools and take full responsibility for the content of their submitted thesis.'<br>Thesis Examination (Viva): KCL warns: 'Some uses of generative AI tools may not be advisable, and may make the thesis more difficult to defend in the oral examination.' This links AI use directly to viva performance. Examiners: The guidance states: 'Examiners should continue to examine theses and conduct oral examinations consistent with King's current Framework for Postgraduate Research Awards.' Examiners determine whether the thesis is genuinely the student's own work.<br>Research Outputs: KCL advises doctoral researchers to consider journal publication policies, disciplinary norms, and emerging expectations regarding AI use in scholarship, encouraging familiarity with publisher policies.",
+    "6. Disclosure and Use: Editing vs. Content Creation": "Disclosure Requirements: KCL explicitly requires acknowledgment of AI use. One of the University's three 'golden rules' states: 'Ensure you take time before submission to acknowledge use of generative AI.' The University expects students to 'be explicit in acknowledging your use of generative AI tools.'<br>Editing and Assistance (Generally Acceptable): KCL identifies several acceptable educational uses, including brainstorming, generating ideas, outlining, explaining concepts, summarising, paraphrasing, organising notes, coding assistance, language support, presentation preparation, and feedback on drafts, described as learning-support activities.<br>Content Creation (Higher Risk): KCL's strongest warning is: 'Never copy-paste text generated from a prompt directly into summative assignments (unless you are specifically told you can do this).' The doctoral guidance emphasizes: 'Any assessment submitted by a student must be their own work.' Using AI-generated text without disclosure presents significant academic integrity risks.",
+    "7. AI, Ethics, Privacy, and Intellectual Property": "Ethics: KCL repeatedly stresses ethical AI use, critical evaluation, responsible deployment, and transparency. Students are warned that AI outputs may contain factual errors, fabricate sources, reproduce bias, or generate misleading content.<br>Intellectual Property (IP): KCL does not treat generative AI systems as authoritative scholarly sources. The doctoral guidance notes: 'Tools like ChatGPT are generating text on a prediction model; they are not quotable sources and are not appropriate places to focus research.' Researchers must verify sources and maintain originality.<br>Privacy and Confidentiality: KCL advises students: 'You should not input personal data, sensitive information or content created by others into any AI platform.' This requirement applies to research data, personal data, confidential materials, and copyrighted content."
+  }
+};
+
+const els = {
+  search: document.getElementById('search'),
+  region: document.getElementById('region'),
+  course: document.getElementById('course'),
+  disclosure: document.getElementById('disclosure'),
+  thesis: document.getElementById('thesis'),
+  cards: document.getElementById('cards'),
+  dName: document.getElementById('dName'),
+  dTags: document.getElementById('dTags'),
+  dSummary: document.getElementById('dSummary'),
+  dCourse: document.getElementById('dCourse'),
+  dResearch: document.getElementById('dResearch'),
+  dDisclosure: document.getElementById('dDisclosure'),
+  dThesis: document.getElementById('dThesis'),
+  dReview: document.getElementById('dReview'),
+  dPrivacy: document.getElementById('dPrivacy'),
+  dBullets: document.getElementById('dBullets'),
+  bars: document.getElementById('bars'),
+  visibleCount: document.getElementById('visibleCount'),
+  courseCount: document.getElementById('courseCount'),
+  researchCount: document.getElementById('researchCount'),
+  disclosureCount: document.getElementById('disclosureCount'),
+  reportTitle: document.getElementById('reportTitle'),
+  reportGridContent: document.getElementById('reportGridContent')
+};
+
+function uniq(arr) { return [...new Set(arr)]; }
+
+function populateSelect(select, values) {
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
+}
+
+populateSelect(els.region, uniq(data.map(d => d.region)));
+populateSelect(els.course, uniq(data.map(d => d.course_model)));
+populateSelect(els.disclosure, uniq(data.map(d => d.disclosure)));
+populateSelect(els.thesis, uniq(data.map(d => d.thesis_guidance)));
+
+function colorClass(text) {
+  const t = text.toLowerCase();
+  if (t.includes('mandatory') || t.includes('default prohibited') || t.includes('strong') || t.includes('high')) return 'bad';
+  if (t.includes('expected') || t.includes('conditional') || t.includes('supervisor') || t.includes('course') || t.includes('guidance')) return 'warn';
+  return 'good';
+}
+
+function matches(item) {
+  const q = els.search.value.trim().toLowerCase();
+  const region = els.region.value;
+  const course = els.course.value;
+  const disclosure = els.disclosure.value;
+  const thesis = els.thesis.value;
+
+  const blob = [item.name, item.region, item.course_model, item.research_model, item.disclosure, item.thesis_guidance, item.review, item.privacy, item.summary, ...item.highlights].join(' ').toLowerCase();
+
+  return (!q || blob.includes(q)) &&
+         (region === 'All' || item.region === region) &&
+         (course === 'All' || item.course_model === course) &&
+         (disclosure === 'All' || item.disclosure === disclosure) &&
+         (thesis === 'All' || item.thesis_guidance === thesis);
+}
+
+let selected = data[0];
+
+function setSelected(item) {
+  selected = item;
+  renderDetail();
+  renderCards();
+  renderFullReport();
+}
+
+function renderDetail() {
+  if (!selected) return;
+  els.dName.textContent = selected.name;
+  els.dSummary.textContent = selected.summary;
+  els.dCourse.textContent = selected.course_model;
+  els.dResearch.textContent = selected.research_model;
+  els.dDisclosure.textContent = selected.disclosure;
+  els.dThesis.textContent = selected.thesis_guidance;
+  els.dReview.textContent = selected.review;
+  els.dPrivacy.textContent = selected.privacy;
+
+  const tags = [
+    selected.region,
+    selected.course_model,
+    selected.research_model,
+    selected.disclosure,
+    selected.thesis_guidance
+  ];
+
+  els.dTags.innerHTML = tags.map(t => `<span class="tag ${colorClass(t)}">${t}</span>`).join('');
+  els.dBullets.innerHTML = selected.highlights.map(b => `<li>${b}</li>`).join('');
+}
+
+function renderFullReport() {
+  if (!selected) return;
+  els.reportTitle.textContent = `${selected.name}: Complete Institutional Policy Text`;
+  
+  const blocks = fullReportText[selected.name];
+  if (!blocks) {
+    els.reportGridContent.innerHTML = `<p style="grid-column: 1/-1; color: var(--muted); padding: 20px;">Detailed textual registry elements for this university are missing or currently being updated.</p>`;
+    return;
+  }
+
+  els.reportGridContent.innerHTML = Object.keys(blocks).map(heading => `
+    <div class="report-block">
+      <h3>${heading}</h3>
+      <p>${blocks[heading]}</p>
+    </div>
+  `).join('');
+}
+
+function renderCards() {
+  const filtered = data.filter(matches);
+  els.visibleCount.textContent = `${filtered.length} visible`;
+
+  els.cards.innerHTML = filtered.map(item => {
+    const active = selected && selected.name === item.name ? 'active' : '';
+    return `
+      <div class="card uni ${active}" data-name="${item.name}">
+        <div class="name">${item.name}</div>
+        <div class="tagrow">
+          <span class="tag">${item.region}</span>
+          <span class="tag ${colorClass(item.course_model)}">${item.course_model}</span>
+        </div>
+        <p class="summary">${item.summary}</p>
+        <div class="tagrow">
+          <span class="tag ${colorClass(item.disclosure)}">${item.disclosure}</span>
+          <span class="tag ${colorClass(item.thesis_guidance)}">${item.thesis_guidance} thesis guidance</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  els.cards.querySelectorAll('.uni').forEach(card => {
+    card.addEventListener('click', () => {
+      const item = data.find(d => d.name === card.dataset.name);
+      if (item) setSelected(item);
+    });
+  });
+
+  renderBars(filtered);
+  const courseFam = filtered.filter(d => /instructor|default prohibited|course \/ program|assessment-specific|school-based|permission|module|faculty|department|program/i.test(d.course_model)).length;
+  const researchFam = filtered.filter(d => /supervisor|research|responsible-use|guidance|adviser|department|policy|committee/i.test(d.research_model)).length;
+  const disclosureFam = filtered.filter(d => /expected|mandatory|conditional/i.test(d.disclosure)).length;
+  els.courseCount.textContent = `${courseFam}/${filtered.length}`;
+  els.researchCount.textContent = `${researchFam}/${filtered.length}`;
+  els.disclosureCount.textContent = `${disclosureFam}/${filtered.length}`;
+}
+
+function renderBars(rows) {
+  const buckets = [
+    {label: 'US', value: rows.filter(d => d.region === 'US').length},
+    {label: 'Canada', value: rows.filter(d => d.region === 'Canada').length},
+    {label: 'UK', value: rows.filter(d => d.region === 'UK').length},
+    {label: 'Europe', value: rows.filter(d => d.region === 'Europe').length},
+  ];
+  const max = Math.max(1, ...buckets.map(b => b.value));
+
+  els.bars.innerHTML = buckets.map(b => `
+    <div class="barrow">
+      <div>${b.label}</div>
+      <div class="bartrack"><div class="barfill" style="width:${(b.value/max)*100}%"></div></div>
+      <div style="text-align:right; color: var(--muted);">${b.value}</div>
+    </div>
+  `).join('');
+}
+
+function applyFilters() {
+  const filtered = data.filter(matches);
+  if (!filtered.some(d => d.name === selected?.name)) {
+    selected = filtered[0] || data[0];
+  }
+  renderDetail();
+  renderCards();
+  renderFullReport();
+}
+
+['input','change'].forEach(evt => {
+  els.search.addEventListener(evt, applyFilters);
+  els.region.addEventListener(evt, applyFilters);
+  els.course.addEventListener(evt, applyFilters);
+  els.disclosure.addEventListener(evt, applyFilters);
+  els.thesis.addEventListener(evt, applyFilters);
+});
+
+renderDetail();
+renderCards();
+renderBars(data);
+renderFullReport();
+</script>
+</body>
+</html>
